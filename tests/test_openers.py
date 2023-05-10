@@ -1,3 +1,4 @@
+from pathlib import Path
 from pickle import dumps, loads
 
 import numpy as np
@@ -6,7 +7,7 @@ import xarray as xr
 from apache_beam.testing.util import assert_that
 from pytest_lazyfixture import lazy_fixture
 
-from pangeo_forge_recipes.openers import open_url, open_with_xarray
+from pangeo_forge_recipes.openers import open_url, open_with_polars, open_with_xarray
 from pangeo_forge_recipes.patterns import FileType
 from pangeo_forge_recipes.transforms import OpenWithKerchunk
 
@@ -173,3 +174,21 @@ def test_inline_threshold(pcoll_opened_files, pipeline):
     with pipeline as p:
         output = p | input | OpenWithKerchunk(pattern.file_type, inline_threshold=1)
         assert_that(output, is_valid_inline_threshold())
+
+
+@pytest.mark.parametrize(
+    "file_type",
+    ["csv", "parquet"],
+)
+@pytest.mark.parametrize("load", [True, False])
+def test_open_with_polars(file_type, load):
+    fn = str(Path(__file__).parent / "data" / f"test.{file_type}")
+    assert isinstance(fn, str)
+    df = open_with_polars(url_or_file_obj=fn, file_type=file_type, load=load)
+    import polars as pl
+
+    if load:  # polars dataframe is returned
+        assert isinstance(df, pl.dataframe.frame.DataFrame)
+
+    if not load:  # 'lazyframe' is returned
+        assert isinstance(df, pl.lazyframe.frame.LazyFrame)

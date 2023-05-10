@@ -246,3 +246,33 @@ def open_with_xarray(
         )
 
     return ds
+
+
+def open_with_polars(
+    url_or_file_obj: Union[OpenFileType, str],
+    file_type: FileType = FileType.unknown,
+    load: bool = True,
+    polars_kwargs: Optional[Dict] = None,
+):
+    kw = polars_kwargs or {}
+
+    if isinstance(file_type, str):
+        file_type = FileType(file_type)
+
+    if file_type not in [FileType.csv, FileType.parquet]:
+        raise NotImplementedError(f"file type: {file_type}, is not yet supported.")
+    url_or_file_obj = _preprocess_url_or_file_obj(url_or_file_obj, file_type)
+    import polars as pl
+
+    if file_type == FileType.csv:
+        if load:
+            df = pl.read_csv(source=url_or_file_obj, **kw)
+        if not load:
+            df = pl.scan_csv(source=url_or_file_obj, **kw)
+
+    if file_type == FileType.parquet:
+        if load:
+            df = pl.read_parquet(source=url_or_file_obj, **kw)
+        if not load:
+            df = pl.scan_parquet(source=url_or_file_obj, **kw)
+    return df

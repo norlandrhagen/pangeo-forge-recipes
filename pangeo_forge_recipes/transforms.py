@@ -10,7 +10,7 @@ import apache_beam as beam
 
 from .aggregation import XarraySchema, dataset_to_schema, schema_to_zarr
 from .combiners import CombineMultiZarrToZarr, CombineXarraySchemas
-from .openers import open_url, open_with_kerchunk, open_with_xarray
+from .openers import open_url, open_with_kerchunk, open_with_polars, open_with_xarray
 from .patterns import CombineOp, Dimension, FileType, Index, augment_index_with_start_stop
 from .rechunking import combine_fragments, split_fragment
 from .storage import CacheFSSpecTarget, FSSpecTarget
@@ -400,3 +400,27 @@ class StoreToZarr(beam.PTransform, ZarrWriterMixin):
             target=self.get_full_target(), target_chunks=self.target_chunks
         )
         return rechunked_datasets | StoreDatasetFragments(target_store=target_store)
+
+
+@dataclass
+class OpenWithPolars(beam.PTransform):
+
+    """
+    :param url_or_file_obj: Provide this if you know what type of file it is.
+    :param file_type: Input data file type.
+    :param load: Whether to eagerly load the data into memory ofter opening.
+    :param polars_kwargs: Extra arguments to pass to polars open.
+    """
+
+    file_type: FileType = FileType.unknown
+    load: bool = False
+    polars_kwargs: Optional[dict] = field(default_factory=dict)
+
+    def expand(self, pcoll):
+        return pcoll | "Open with Polars" >> beam.Map(
+            # _add_keys(open_with_xarray),
+            open_with_polars,
+            file_type=self.file_type,
+            load=self.load,
+            polars_kwargs=self.polars_kwargs,
+        )

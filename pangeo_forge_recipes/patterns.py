@@ -90,6 +90,8 @@ class FileType(AutoName):
     grib = auto()
     opendap = auto()
     zarr = auto()
+    csv = auto()
+    parquet = auto()
 
 
 class FilePattern:

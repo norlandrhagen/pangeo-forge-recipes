@@ -13,6 +13,7 @@ from pangeo_forge_recipes.transforms import (
     DetermineSchema,
     IndexItems,
     OpenWithKerchunk,
+    OpenWithPolars,
     OpenWithXarray,
     PrepareZarrTarget,
     Rechunk,
@@ -68,6 +69,11 @@ def test_OpenURLWithFSSpec(pcoll_opened_files):
         cache = CacheFSSpecTarget.from_url(cache_url)
         for key, fname in pattern.items():
             assert cache.exists(fname)
+
+
+def is_polars_dataset():
+    # todo
+    pass
 
 
 def is_xr_dataset(in_memory=False):
@@ -147,6 +153,17 @@ def test_OpenWithKerchunk_direct(pattern_direct, pipeline):
             | OpenWithKerchunk(file_type=pattern_direct.file_type)
         )
         assert_that(output, is_list_of_refs_dicts())
+
+
+def test_OpenWithPolars_direct(polars_pattern_direct, pipeline):
+
+    with pipeline as p:
+        output = (
+            p
+            | beam.Create(pattern_direct.items())
+            | OpenWithPolars(file_type=pattern_direct.file_type)
+        )
+        assert_that(output, is_polars_dataset())
 
 
 @pytest.mark.parametrize("target_chunks", [{}, {"time": 1}, {"time": 2}, {"time": 2, "lon": 9}])
