@@ -209,6 +209,8 @@ class ZarrWriterMixin:
             target_root = self.target_root
         return target_root / self.store_name
 
+import logging
+logger = logging.getLogger(__name__)
 
 def create_pyramid(
     item: Tuple[Index, xr.Dataset],
@@ -231,6 +233,7 @@ def create_pyramid(
     # For now, we can use ds.rename
     if rename_spatial_dims:
         ds = ds.rename(rename_spatial_dims)
+    logger.warning("reprojecting")
 
     level_ds = level_reproject(ds, level=level, **pyramid_kwargs)
 
