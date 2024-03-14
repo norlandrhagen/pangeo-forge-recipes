@@ -719,6 +719,29 @@ class CreatePyramid(beam.PTransform):
         )
 
 
+### TEMP TESTING 
+
+def regrid_level(item: Tuple[Index, xr.Dataset],level: int):
+    index, ds = item
+    dims = {'lat': level, 'lon': level}
+    # regrid!
+    regrid_ds = ds.coarsen(**dims).mean()
+    return index, regrid_ds
+
+@dataclass
+class RegridLevel(beam.PTransform):
+    level: int
+    def expand(self, pcoll: beam.PCollection) -> beam.PCollection:
+        return pcoll | beam.Map(
+            regrid_level,
+            level=self.level,
+        )
+    
+
+
+####
+    
+
 @dataclass
 class StoreToPyramid(beam.PTransform, ZarrWriterMixin):
 
@@ -786,21 +809,18 @@ class StoreToPyramid(beam.PTransform, ZarrWriterMixin):
         ds.to_zarr(store=target_path)  # noqa
 
         # generate all pyramid levels
-        lvl_list = list(range(0, self.n_levels))
+        ##### CHANGED FOR TEST
+        lvl_list = list(range(1, self.n_levels))
         # transform_pyr_lvls = []
         for lvl in lvl_list:
-
-            datasets | f"Create Pyr level: {str(lvl)}" >> CreatePyramid(
-                level=lvl,
-                epsg_code=self.epsg_code,
-                rename_spatial_dims=self.rename_spatial_dims,
-                pyramid_kwargs=self.pyramid_kwargs,
-            ) | f"Store Pyr level: {lvl}" >> StoreToZarr(
+            regrid_datasets = datasets | f"regrid via xarray level: {str(lvl)}" >> RegridLevel(level=lvl)
+            regrid_datasets | f"Store Pyr level: {lvl}" >> StoreToZarr(
                 target_root=self.target_root,
                 target_chunks=chunks,  # noqa
                 store_name=f"{self.store_name}/{str(lvl)}",
                 combine_dims=self.combine_dims,
             )
+
             # transform_pyr_lvls.append(pyr_ds)
 
         # To consolidate the top level metadata, we need all the pyramid groups to be written.

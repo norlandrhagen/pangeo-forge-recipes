@@ -218,7 +218,7 @@ def create_pyramid(
     epsg_code: Optional[str] = None,
     rename_spatial_dims: Optional[dict] = None,
     pyramid_kwargs: Optional[dict] = {},
-) -> zarr.storage.FSStore:
+) -> Tuple[Index, xr.Dataset]:
     index, ds = item
     from ndpyramid.reproject import level_reproject
     from ndpyramid.utils import set_zarr_encoding
