@@ -723,8 +723,8 @@ class CreatePyramid(beam.PTransform):
 
 def regrid_level(item: Tuple[Index, xr.Dataset],level: int):
     index, ds = item
-    dims = {'lat': level, 'lon': level}
     import pdb; pdb.set_trace()
+    dims = {'lat': level, 'lon': level}
     regrid_ds = ds.coarsen(**dims).mean()
     return index, regrid_ds
 
@@ -810,7 +810,9 @@ class StoreToPyramid(beam.PTransform, ZarrWriterMixin):
 
         # generate all pyramid levels
         ##### CHANGED FOR TEST
-        lvl_list = list(range(1, self.n_levels))
+        lvl_list = [16, 8, 4, 3, 2, 1]
+        # lvl_list = list(range(1, self.n_levels))
+        
         # transform_pyr_lvls = []
         for lvl in lvl_list:
             regrid_datasets = datasets | f"regrid via xarray level: {str(lvl)}" >> RegridLevel(level=lvl)
