@@ -723,7 +723,7 @@ class CreatePyramid(beam.PTransform):
 
 def regrid_level(item: Tuple[Index, xr.Dataset],level: int):
     index, ds = item
-    dims = {'latitude': level, 'longitude': level}
+    dims = {'lat': level, 'lon': level}
     # regrid!
     regrid_ds = ds.coarsen(**dims).mean()
     return index, regrid_ds
